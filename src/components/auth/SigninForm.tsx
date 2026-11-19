@@ -18,10 +18,12 @@ export default function SigninForm() {
     e.preventDefault();
     setLoading(true);
 
-    const { error } = await authClient.signIn.email({
-      email,
-      password,
-    });
+    const { data, error } = await authClient.signIn.email({
+  email,
+  password,
+});
+
+console.log({ data, error });
 
     if (error) {
      toast.error(error.message);
