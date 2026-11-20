@@ -22,7 +22,9 @@ type NavbarActionsProps = {
   session: {
     user: {
       name: string;
+      email: string;
       image?: string | null;
+      role: "customer" | "vendor" | "admin";
     };
   } | null;
 };
