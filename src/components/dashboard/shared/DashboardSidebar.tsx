@@ -31,23 +31,23 @@ type DashboardSidebarProps = {
 
 const DashboardSidebar = ({ role }: DashboardSidebarProps) => {
   const customerLinks = [
-    { title: "Overview", href: "/dashboard", icon: LayoutDashboard },
-    { title: "My Bookings", href: "/dashboard/bookings", icon: CalendarCheck },
+    { title: "Overview", href: "/dashboard/customer", icon: LayoutDashboard },
+    { title: "My Bookings", href: "/dashboard/customer/bookings", icon: CalendarCheck },
   ];
 
   const vendorLinks = [
-    { title: "Overview", href: "/dashboard", icon: LayoutDashboard },
-    { title: "My Services", href: "/dashboard/services", icon: BriefcaseBusiness },
-    { title: "Add Service", href: "/dashboard/services/add", icon: PlusCircle },
-    { title: "Booking Requests", href: "/dashboard/requests", icon: ClipboardList },
-    { title: "Subscription", href: "/dashboard/subscription", icon: Crown },
+    { title: "Overview", href: "/dashboard/vendor", icon: LayoutDashboard },
+    { title: "My Services", href: "/dashboard/vendor/services", icon: BriefcaseBusiness },
+    { title: "Add Service", href: "/dashboard/vendor/services/add", icon: PlusCircle },
+    { title: "Booking Requests", href: "/dashboard/vendor/requests", icon: ClipboardList },
+    { title: "Subscription", href: "/dashboard/vendor/subscription", icon: Crown },
   ];
 
   const adminLinks = [
-    { title: "Overview", href: "/dashboard", icon: LayoutDashboard },
-    { title: "Manage Users", href: "/dashboard/users", icon: Users },
-    { title: "Manage Services", href: "/dashboard/services", icon: ClipboardCheck },
-    { title: "Transactions", href: "/dashboard/transactions", icon: CreditCard },
+    { title: "Overview", href: "/dashboard/admin", icon: LayoutDashboard },
+    { title: "Manage Users", href: "/dashboard/admin/users", icon: Users },
+    { title: "Manage Services", href: "/dashboard/admin/services", icon: ClipboardCheck },
+    { title: "Transactions", href: "/dashboard/admin/transactions", icon: CreditCard },
   ];
 
   const links =
@@ -80,9 +80,7 @@ const DashboardSidebar = ({ role }: DashboardSidebarProps) => {
 
               return (
                 <SidebarMenuItem key={item.href}>
-                  <SidebarMenuButton
-                    render={<Link href={item.href} />}
-                  >
+                  <SidebarMenuButton render={<Link href={item.href} />}>
                     <Icon />
                     <span>{item.title}</span>
                   </SidebarMenuButton>

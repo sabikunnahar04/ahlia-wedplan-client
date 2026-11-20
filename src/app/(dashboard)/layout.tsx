@@ -7,6 +7,8 @@ import { auth } from "@/lib/auth";
 import DashboardSidebar from "@/components/dashboard/shared/DashboardSidebar";
 import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
 
+export const instant = false;
+
 const DashboardLayout = async ({
   children,
 }: {
@@ -26,9 +28,7 @@ const DashboardLayout = async ({
     <SidebarProvider>
       <DashboardSidebar role={role} />
 
-      <SidebarInset>
-        {children}
-      </SidebarInset>
+      <SidebarInset>{children}</SidebarInset>
     </SidebarProvider>
   );
 };
