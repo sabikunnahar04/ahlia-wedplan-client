@@ -16,6 +16,7 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 
 type User = {
   _id: string;
@@ -29,6 +30,8 @@ const ManageUsersPage = () => {
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [search, setSearch] = useState("");
+  const [roleFilter, setRoleFilter] = useState("all");
 
   useEffect(() => {
     const loadUsers = async () => {
@@ -61,6 +64,17 @@ const ManageUsersPage = () => {
     }
   };
 
+  const filteredUsers = users.filter((user) => {
+    const matchesSearch =
+      user.name.toLowerCase().includes(search.toLowerCase()) ||
+      user.email.toLowerCase().includes(search.toLowerCase());
+
+    const matchesRole =
+      roleFilter === "all" || user.role === roleFilter;
+
+    return matchesSearch && matchesRole;
+  });
+
   return (
     <div className="p-6">
       <h1 className="text-2xl font-bold text-[#245C45]">
@@ -71,6 +85,25 @@ const ManageUsersPage = () => {
         Manage customers and vendors.
       </p>
 
+      <div className="mt-6 flex flex-col gap-3 sm:flex-row">
+        <Input
+          placeholder="Search by name or email..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+        />
+
+        <select
+          value={roleFilter}
+          onChange={(e) => setRoleFilter(e.target.value)}
+          className="h-10 rounded-md border px-3"
+        >
+          <option value="all">All Roles</option>
+          <option value="customer">Customer</option>
+          <option value="vendor">Vendor</option>
+          <option value="admin">Admin</option>
+        </select>
+      </div>
+
       <div className="mt-6">
         {loading ? (
           <div className="space-y-3">
@@ -80,7 +113,7 @@ const ManageUsersPage = () => {
           </div>
         ) : error ? (
           <p className="text-red-600">{error}</p>
-        ) : users.length === 0 ? (
+        ) : filteredUsers.length === 0 ? (
           <p className="text-gray-500">No users found.</p>
         ) : (
           <Table>
@@ -95,7 +128,7 @@ const ManageUsersPage = () => {
             </TableHeader>
 
             <TableBody>
-              {users.map((user) => (
+              {filteredUsers.map((user) => (
                 <TableRow key={user._id}>
                   <TableCell>{user.name}</TableCell>
                   <TableCell>{user.email}</TableCell>
