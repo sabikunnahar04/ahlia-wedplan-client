@@ -68,6 +68,18 @@ const ManageServicesPage = () => {
     }
   };
 
+  const deleteService = async (id: string) => {
+    try {
+      await api.delete(`/api/services/admin/${id}`);
+
+      setServices((previousServices) =>
+        previousServices.filter((service) => service._id !== id)
+      );
+    } catch {
+      setError("Failed to delete service");
+    }
+  };
+
   return (
     <div className="p-6">
       <h1 className="text-2xl font-bold text-[#245C45]">
@@ -113,35 +125,47 @@ const ManageServicesPage = () => {
                   <TableCell>{service.location ?? "-"}</TableCell>
                   <TableCell>{service.price ?? "-"}</TableCell>
                   <TableCell>{service.vendorId ?? "-"}</TableCell>
+
                   <TableCell>
                     <Badge variant="secondary">
                       {service.status ?? "pending"}
                     </Badge>
                   </TableCell>
-                  <TableCell>
-                    {service.status !== "approved" &&
-                      service.status !== "rejected" && (
-                        <div className="flex gap-2">
-                          <Button
-                            size="sm"
-                            onClick={() =>
-                              updateStatus(service._id, "approved")
-                            }
-                          >
-                            Approve
-                          </Button>
 
-                          <Button
-                            size="sm"
-                            variant="destructive"
-                            onClick={() =>
-                              updateStatus(service._id, "rejected")
-                            }
-                          >
-                            Reject
-                          </Button>
-                        </div>
-                      )}
+                  <TableCell>
+                    <div className="flex gap-2">
+                      {service.status !== "approved" &&
+                        service.status !== "rejected" && (
+                          <>
+                            <Button
+                              size="sm"
+                              onClick={() =>
+                                updateStatus(service._id, "approved")
+                              }
+                            >
+                              Approve
+                            </Button>
+
+                            <Button
+                              size="sm"
+                              variant="destructive"
+                              onClick={() =>
+                                updateStatus(service._id, "rejected")
+                              }
+                            >
+                              Reject
+                            </Button>
+                          </>
+                        )}
+
+                      <Button
+                        size="sm"
+                        variant="destructive"
+                        onClick={() => deleteService(service._id)}
+                      >
+                        Delete
+                      </Button>
+                    </div>
                   </TableCell>
                 </TableRow>
               ))}
