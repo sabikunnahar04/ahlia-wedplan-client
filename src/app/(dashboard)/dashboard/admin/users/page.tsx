@@ -15,6 +15,7 @@ import {
 
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 
 type User = {
   _id: string;
@@ -33,7 +34,6 @@ const ManageUsersPage = () => {
     const loadUsers = async () => {
       try {
         const result = await api.get<{ data: User[] }>("/api/users");
-
         setUsers(result.data ?? []);
       } catch (err) {
         setError(
@@ -46,6 +46,20 @@ const ManageUsersPage = () => {
 
     loadUsers();
   }, []);
+
+  const updateUserStatus = async (id: string, isBlocked: boolean) => {
+    try {
+      await api.put(`/api/users/${id}/status`, { isBlocked });
+
+      setUsers((previousUsers) =>
+        previousUsers.map((user) =>
+          user._id === id ? { ...user, isBlocked } : user
+        )
+      );
+    } catch {
+      setError("Failed to update user status");
+    }
+  };
 
   return (
     <div className="p-6">
@@ -76,6 +90,7 @@ const ManageUsersPage = () => {
                 <TableHead>Email</TableHead>
                 <TableHead>Role</TableHead>
                 <TableHead>Status</TableHead>
+                <TableHead>Action</TableHead>
               </TableRow>
             </TableHeader>
 
@@ -85,10 +100,23 @@ const ManageUsersPage = () => {
                   <TableCell>{user.name}</TableCell>
                   <TableCell>{user.email}</TableCell>
                   <TableCell>{user.role}</TableCell>
+
                   <TableCell>
                     <Badge variant="secondary">
                       {user.isBlocked ? "Blocked" : "Active"}
                     </Badge>
+                  </TableCell>
+
+                  <TableCell>
+                    <Button
+                      size="sm"
+                      variant={user.isBlocked ? "default" : "destructive"}
+                      onClick={() =>
+                        updateUserStatus(user._id, !user.isBlocked)
+                      }
+                    >
+                      {user.isBlocked ? "Unblock" : "Block"}
+                    </Button>
                   </TableCell>
                 </TableRow>
               ))}
