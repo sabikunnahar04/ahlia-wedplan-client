@@ -15,6 +15,7 @@ import {
 
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Button } from "@/components/ui/button";
 
 type Service = {
   _id: string;
@@ -51,6 +52,22 @@ const ManageServicesPage = () => {
     loadServices();
   }, []);
 
+  const updateStatus = async (id: string, status: string) => {
+    try {
+      await api.put(`/api/services/admin/${id}/status`, { status });
+
+      setServices((previousServices) =>
+        previousServices.map((service) =>
+          service._id === id ? { ...service, status } : service
+        )
+      );
+    } catch (err) {
+      setError(
+        err instanceof Error ? err.message : "Failed to update status"
+      );
+    }
+  };
+
   return (
     <div className="p-6">
       <h1 className="text-2xl font-bold text-[#245C45]">
@@ -84,6 +101,7 @@ const ManageServicesPage = () => {
                 <TableHead>Price</TableHead>
                 <TableHead>Vendor ID</TableHead>
                 <TableHead>Status</TableHead>
+                <TableHead>Action</TableHead>
               </TableRow>
             </TableHeader>
 
@@ -99,6 +117,31 @@ const ManageServicesPage = () => {
                     <Badge variant="secondary">
                       {service.status ?? "pending"}
                     </Badge>
+                  </TableCell>
+                  <TableCell>
+                    {service.status !== "approved" &&
+                      service.status !== "rejected" && (
+                        <div className="flex gap-2">
+                          <Button
+                            size="sm"
+                            onClick={() =>
+                              updateStatus(service._id, "approved")
+                            }
+                          >
+                            Approve
+                          </Button>
+
+                          <Button
+                            size="sm"
+                            variant="destructive"
+                            onClick={() =>
+                              updateStatus(service._id, "rejected")
+                            }
+                          >
+                            Reject
+                          </Button>
+                        </div>
+                      )}
                   </TableCell>
                 </TableRow>
               ))}
