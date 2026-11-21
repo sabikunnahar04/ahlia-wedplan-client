@@ -1,10 +1,18 @@
+
+import { authClient } from "@/lib/auth-client";
+
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "";
 
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
+  const { data } = await authClient.token();
+
   const response = await fetch(`${API_BASE_URL}${path}`, {
     ...options,
     headers: {
       "Content-Type": "application/json",
+      ...(data?.token
+        ? { Authorization: `Bearer ${data.token}` }
+        : {}),
       ...(options?.headers ?? {}),
     },
   });
