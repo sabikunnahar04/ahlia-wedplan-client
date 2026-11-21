@@ -12,12 +12,23 @@ type Service = {
   location: string;
   price: string | number;
   description: string;
+  vendor?: {
+    name: string;
+    email: string;
+  };
+};
+
+type Booking = {
+  serviceId: string;
+  eventDate: string;
+  status: string;
 };
 
 const ServiceDetailsPage = () => {
   const { id } = useParams<{ id: string }>();
 
   const [service, setService] = useState<Service | null>(null);
+  const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [eventDate, setEventDate] = useState("");
@@ -28,15 +39,18 @@ const ServiceDetailsPage = () => {
   const [success, setSuccess] = useState("");
 
   useEffect(() => {
-    const getService = async () => {
+    const getData = async () => {
       try {
         const result = await api.get<{ data: Service[] }>("/api/services");
-
-        const foundService = result.data.find(
-          (item) => item._id === id
-        );
+        const foundService = result.data.find((item) => item._id === id);
 
         setService(foundService ?? null);
+
+        const bookingResult = await api.get<{ data: Booking[] }>(
+          "/api/bookings/my-bookings"
+        );
+
+        setBookings(bookingResult.data || []);
       } catch {
         setService(null);
       } finally {
@@ -44,8 +58,15 @@ const ServiceDetailsPage = () => {
       }
     };
 
-    getService();
+    getData();
   }, [id]);
+
+  const alreadyRequested = bookings.some(
+    (booking) =>
+      booking.serviceId === id &&
+      booking.eventDate === eventDate &&
+      ["pending", "accepted"].includes(booking.status)
+  );
 
   const handleBooking = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -62,14 +83,22 @@ const ServiceDetailsPage = () => {
       });
 
       setSuccess("Booking request submitted successfully!");
+
+      setBookings((previous) => [
+        ...previous,
+        {
+          serviceId: id,
+          eventDate,
+          status: "pending",
+        },
+      ]);
+
       setEventDate("");
       setEventLocation("");
       setMessage("");
       setShowForm(false);
-    } catch (err) {
-      setError(
-        err instanceof Error ? err.message : "Booking failed"
-      );
+    } catch {
+      setError("You already have an active booking for this date.");
     } finally {
       setSubmitting(false);
     }
@@ -86,86 +115,80 @@ const ServiceDetailsPage = () => {
   return (
     <div className="mx-auto max-w-6xl px-4 py-10">
       <div className="grid grid-cols-1 gap-8 md:grid-cols-2">
-
-        {/* Service Details */}
         <div className="rounded-xl border bg-white p-6 shadow-sm">
           <h1 className="text-2xl font-bold text-[#245C45]">
             {service.name}
           </h1>
 
           <div className="mt-6 space-y-4 text-gray-600">
-            <p>
-              <span className="font-semibold text-gray-800">
-                Category:
-              </span>{" "}
-              {service.category}
-            </p>
-
-            <p>
-              <span className="font-semibold text-gray-800">
-                Location:
-              </span>{" "}
-              {service.location}
-            </p>
-
-            <p>
-              <span className="font-semibold text-gray-800">
-                Price:
-              </span>{" "}
-              ৳{service.price}
-            </p>
+            <p><b>Category:</b> {service.category}</p>
+            <p><b>Location:</b> {service.location}</p>
+            <p><b>Price:</b> ৳{service.price}</p>
 
             <div>
-              <p className="font-semibold text-gray-800">
-                Description:
-              </p>
+              <b>Description:</b>
               <p className="mt-2">{service.description}</p>
+            </div>
+
+            <div className="border-t pt-4">
+              <h2 className="font-bold text-[#245C45]">
+                Vendor Information
+              </h2>
+              <p><b>Name:</b> {service.vendor?.name}</p>
+              <p><b>Email:</b> {service.vendor?.email}</p>
             </div>
           </div>
 
-          <button
-            onClick={() => {
-              setShowForm(!showForm);
-              setError("");
-            }}
-            className="mt-8 rounded-md bg-[#245C45] px-6 py-3 font-medium text-white hover:bg-[#173f31]"
-          >
-            {showForm ? "Cancel Booking" : "Book Now"}
-          </button>
+          {alreadyRequested ? (
+            <p className="mt-8 font-medium text-green-700">
+              Already Requested
+            </p>
+          ) : (
+            <button
+              onClick={() => {
+                setShowForm(!showForm);
+                setError("");
+              }}
+              className="mt-8 rounded-md bg-[#245C45] px-6 py-3 font-medium text-white hover:bg-[#173f31]"
+            >
+              {showForm ? "Cancel Booking" : "Book Now"}
+            </button>
+          )}
         </div>
 
-        {/* Booking Form */}
         <div className="rounded-xl border bg-white p-6 shadow-sm">
-          {showForm ? (
+          {showForm && !alreadyRequested ? (
             <form onSubmit={handleBooking} className="space-y-5">
               <h2 className="text-xl font-bold text-[#245C45]">
                 Book This Service
               </h2>
 
               <div>
-                <label className="mb-2 block font-medium">
-                  Event Date
-                </label>
+                <label className="mb-2 block font-medium">Event Date</label>
                 <input
                   type="date"
                   required
                   value={eventDate}
                   onChange={(e) => setEventDate(e.target.value)}
-                  className="w-full rounded-md border p-3 outline-none focus:border-[#245C45]"
+                  className="w-full rounded-md border p-3"
                 />
               </div>
 
+              {alreadyRequested && (
+                <p className="text-sm text-red-500">
+                  You already requested this service for this date.
+                </p>
+              )}
+
               <div>
-                <label className="mb-2 block font-medium">
-                  Event Location
-                </label>
+                <label className="mb-2 block font-medium">Event Location</label>
                 <input
                   type="text"
                   required
                   placeholder="Enter event location"
                   value={eventLocation}
                   onChange={(e) => setEventLocation(e.target.value)}
-                  className="w-full rounded-md border p-3 outline-none focus:border-[#245C45]"
+                  className="w-full rounded-md border p-3"
                 />
               </div>
 
@@ -178,18 +201,16 @@ const ServiceDetailsPage = () => {
                   placeholder="Write your message (optional)"
                   value={message}
                   onChange={(e) => setMessage(e.target.value)}
-                  className="w-full rounded-md border p-3 outline-none focus:border-[#245C45]"
+                  className="w-full rounded-md border p-3"
                 />
               </div>
 
-              {error && (
-                <p className="text-sm text-red-500">{error}</p>
-              )}
+              {error && <p className="text-sm text-red-500">{error}</p>}
 
               <button
                 type="submit"
-                disabled={submitting}
-                className="w-full rounded-md bg-[#245C45] px-5 py-3 font-medium text-white hover:bg-[#173f31] disabled:opacity-50"
+                disabled={submitting || alreadyRequested}
+                className="w-full rounded-md bg-[#245C45] px-5 py-3 font-medium text-white disabled:opacity-50"
               >
                 {submitting ? "Submitting..." : "Submit Booking"}
               </button>
@@ -205,7 +226,6 @@ const ServiceDetailsPage = () => {
             </div>
           )}
         </div>
-
       </div>
 
       {success && (
