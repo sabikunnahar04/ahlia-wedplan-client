@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 
 import { useSession } from "@/lib/auth-client";
 import { api } from "@/lib/api";
+import { action } from "@/lib/action";
 
 import {
   Table,
@@ -62,11 +63,9 @@ const VendorServicesPage = () => {
       setError(null);
 
       try {
-        const data = await api.get<Service[] | { services: Service[] }>(
-          "/api/services"
-        );
+        const data = await api.get<{ data: Service[] }>("/api/services/my-services");
 
-        const list = Array.isArray(data) ? data : (data?.services ?? []);
+        const list = data?.data ?? [];
 
         if (active) {
           setServices(list);
@@ -96,14 +95,32 @@ const VendorServicesPage = () => {
       ? services.filter((service) => service.vendorId === userId)
       : services;
 
-  const handleAddService = (e: React.FormEvent) => {
+  const handleAddService = async (e: React.FormEvent) => {
     e.preventDefault();
-    setOpen(false);
-    setName("");
-    setCategory("");
-    setLocation("");
-    setPrice("");
-    setDescription("");
+
+    try {
+      await action.post("/api/services", {
+        name,
+        category,
+        location,
+        price,
+        description,
+      });
+
+      const data = await api.get<{ data: Service[] }>("/api/services/my-services");
+
+      const list = data?.data ?? [];
+
+      setServices(list);
+      setOpen(false);
+      setName("");
+      setCategory("");
+      setLocation("");
+      setPrice("");
+      setDescription("");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to add service");
+    }
   };
 
   return (
