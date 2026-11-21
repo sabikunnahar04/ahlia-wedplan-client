@@ -19,14 +19,13 @@ import {
 import Signout from "@/components/auth/Signout";
 
 type NavbarActionsProps = {
-  session: {
-    user: {
-      name: string;
-      email: string;
-      image?: string | null;
-      role: "customer" | "vendor" | "admin";
-    };
-  } | null;
+   session: {
+     user: {
+       name: string;
+       email: string;
+       image?: string | null;
+     };
+   } | null;
 };
 
 const NavbarActions = ({ session }: NavbarActionsProps) => {
