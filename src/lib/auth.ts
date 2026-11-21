@@ -11,7 +11,17 @@ export const auth = betterAuth({
    database: mongodbAdapter(db, {
     client,
   }),
-  plugins: [jwt()],
+  plugins: [
+  jwt({
+    jwt: {
+      definePayload: ({ user }) => ({
+        id: user.id,
+        email: user.email,
+        role: user.role,
+      }),
+    },
+  }),
+],
 
   user: {
   additionalFields: {
