@@ -2,8 +2,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-
-import { useSession } from "@/lib/auth-client";
 import { api } from "@/lib/api";
 import { action } from "@/lib/action";
 
@@ -17,30 +15,29 @@ import {
 } from "@/components/ui/table";
 
 import { Badge } from "@/components/ui/badge";
-import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import Image from "next/image";
+
 type Service = {
-  _id?: string;
-  id?: string;
+  _id: string;
   name: string;
-  category?: string;
-  location?: string;
-  price?: number | string;
-  status?: string;
-  vendorId?: string;
+  category: string;
+  location: string;
+  price: string | number;
+  description: string;
+  image: string;
+  status: string;
+  isActive?: boolean;
 };
 
 const categories = [
@@ -52,14 +49,13 @@ const categories = [
   "Wedding Fashion",
 ];
 
-const VendorServicesPage = () => {
-  const { data: session } = useSession();
-
+export default function VendorServicesPage() {
   const [services, setServices] = useState<Service[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState("");
 
-  const [open, setOpen] = useState(false);
+  const [viewService, setViewService] = useState<Service | null>(null);
+  const [editService, setEditService] = useState<Service | null>(null);
 
   const [name, setName] = useState("");
   const [category, setCategory] = useState("");
@@ -67,57 +63,44 @@ const VendorServicesPage = () => {
   const [price, setPrice] = useState("");
   const [description, setDescription] = useState("");
 
+  const loadServices = async () => {
+    const data = await api.get<{ data: Service[] }>(
+      "/api/services/my-services"
+    );
+
+    setServices(data?.data ?? []);
+  };
+
   useEffect(() => {
-    let active = true;
-
-    const loadServices = async () => {
-      setLoading(true);
-      setError(null);
-
+    const load = async () => {
       try {
-        const data = await api.get<{ data: Service[] }>(
-          "/api/services/my-services"
-        );
-
-        if (active) {
-          setServices(data?.data ?? []);
-        }
-      } catch (err) {
-        if (active) {
-          setError(
-            err instanceof Error
-              ? err.message
-              : "Failed to load services"
-          );
-        }
+        await loadServices();
+      } catch {
+        setError("Failed to load services");
       } finally {
-        if (active) {
-          setLoading(false);
-        }
+        setLoading(false);
       }
     };
 
-    loadServices();
-
-    return () => {
-      active = false;
-    };
+    load();
   }, []);
 
-  const userId = session?.user?.id;
+  const handleEdit = (service: Service) => {
+    setEditService(service);
+    setName(service.name);
+    setCategory(service.category);
+    setLocation(service.location);
+    setPrice(String(service.price));
+    setDescription(service.description);
+  };
 
-  const hasVendorIds = services.some((service) => service.vendorId);
-
-  const visibleServices =
-    userId && hasVendorIds
-      ? services.filter((service) => service.vendorId === userId)
-      : services;
-
-  const handleAddService = async (e: React.FormEvent) => {
+  const handleUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    if (!editService) return;
+
     try {
-      await action.post("/api/services", {
+      await action.put(`/api/services/${editService._id}`, {
         name,
         category,
         location,
@@ -125,172 +108,143 @@ const VendorServicesPage = () => {
         description,
       });
 
-      const data = await api.get<{ data: Service[] }>(
-        "/api/services/my-services"
+      await loadServices();
+      setEditService(null);
+    } catch {
+      setError("Failed to update service");
+    }
+  };
+
+  const handleDelete = async (id: string) => {
+    if (!window.confirm("Do you want to delete this service?")) {
+      return;
+    }
+
+    try {
+      await action.delete(`/api/services/${id}`);
+      await loadServices();
+    } catch {
+      setError("Failed to delete service");
+    }
+  };
+
+  const handleAvailability = async (service: Service) => {
+    try {
+      await action.patch(
+        `/api/services/${service._id}/availability`,
+        {
+          isActive: service.isActive === false,
+        }
       );
 
-      setServices(data?.data ?? []);
-      setOpen(false);
-
-      setName("");
-      setCategory("");
-      setLocation("");
-      setPrice("");
-      setDescription("");
-      setError(null);
-    } catch (err) {
-      setError(
-        err instanceof Error
-          ? err.message
-          : "Failed to add service"
-      );
+      await loadServices();
+    } catch {
+      setError("Failed to update availability");
     }
   };
 
   return (
     <div className="p-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-[#245C45]">
-            My Services
-          </h1>
+      <h1 className="text-2xl font-bold text-[#245C45]">
+        My Services
+      </h1>
 
-          <p className="mt-2 text-gray-600">
-            Manage your wedding services.
-          </p>
-        </div>
+      <p className="mt-2 text-gray-600">
+        Manage your wedding services.
+      </p>
 
-        <Dialog open={open} onOpenChange={setOpen}>
-          <DialogTrigger render={<Button />}>
-            Add Service
-          </DialogTrigger>
-
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Add Service</DialogTitle>
-
-              <DialogDescription>
-                Enter the details of your new wedding service.
-              </DialogDescription>
-            </DialogHeader>
-
-            <form onSubmit={handleAddService} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="name">Service Name</Label>
-
-                <Input
-                  id="name"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  required
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="category">Service Category</Label>
-
-                <select
-                  id="category"
-                  value={category}
-                  onChange={(e) => setCategory(e.target.value)}
-                  className="w-full border rounded-md p-3"
-                  required
-                >
-                  <option value="">Select a category</option>
-
-                  {categories.map((item) => (
-                    <option key={item} value={item}>
-                      {item}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="description">Description</Label>
-
-                <Textarea
-                  id="description"
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                  required
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="price">Price</Label>
-
-                <Input
-                  id="price"
-                  type="number"
-                  min="0"
-                  value={price}
-                  onChange={(e) => setPrice(e.target.value)}
-                  required
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="location">Location</Label>
-
-                <Input
-                  id="location"
-                  value={location}
-                  onChange={(e) => setLocation(e.target.value)}
-                  required
-                />
-              </div>
-
-              <DialogFooter>
-                <Button type="submit">Save</Button>
-              </DialogFooter>
-            </form>
-          </DialogContent>
-        </Dialog>
-      </div>
+      {error && (
+        <p className="mt-4 text-sm text-red-600">{error}</p>
+      )}
 
       <div className="mt-6">
         {loading ? (
-          <div className="space-y-3">
-            {Array.from({ length: 4 }).map((_, index) => (
-              <Skeleton key={index} className="h-10 w-full" />
-            ))}
-          </div>
-        ) : error ? (
-          <p className="text-sm text-red-600">{error}</p>
-        ) : visibleServices.length === 0 ? (
-          <p className="text-sm text-gray-500">
-            No services found.
-          </p>
+          <p>Loading services...</p>
+        ) : services.length === 0 ? (
+          <p>No services found.</p>
         ) : (
           <Table>
             <TableHeader>
               <TableRow>
+                <TableHead>Image</TableHead>
                 <TableHead>Name</TableHead>
                 <TableHead>Category</TableHead>
-                <TableHead>Location</TableHead>
                 <TableHead>Price</TableHead>
-                <TableHead>Status</TableHead>
+                <TableHead>Approval Status</TableHead>
+                <TableHead>Availability</TableHead>
+                <TableHead>Actions</TableHead>
               </TableRow>
             </TableHeader>
 
             <TableBody>
-              {visibleServices.map((service) => (
-                <TableRow
-                  key={service._id ?? service.id ?? service.name}
-                >
-                  <TableCell>{service.name}</TableCell>
-                  <TableCell>{service.category ?? "-"}</TableCell>
-                  <TableCell>{service.location ?? "-"}</TableCell>
+              {services.map((service) => (
+                <TableRow key={service._id}>
                   <TableCell>
-                    {typeof service.price === "number"
-                      ? `$${service.price}`
-                      : service.price ?? "-"}
+                    {service.image ? (
+                     <Image
+  src={service.image}
+  alt={service.name}
+  width={48}
+  height={48}
+  className="h-12 w-12 rounded object-cover"
+/>
+                    ) : (
+                      "-"
+                    )}
                   </TableCell>
+
+                  <TableCell>{service.name}</TableCell>
+                  <TableCell>{service.category}</TableCell>
+                  <TableCell>{service.price}</TableCell>
+
                   <TableCell>
                     <Badge variant="secondary">
-                      {service.status ?? "unknown"}
+                      {service.status}
                     </Badge>
+                  </TableCell>
+
+                  <TableCell>
+                    {service.isActive === false
+                      ? "Inactive"
+                      : "Active"}
+                  </TableCell>
+
+                  <TableCell>
+                    <div className="flex flex-wrap gap-2">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => setViewService(service)}
+                      >
+                        View
+                      </Button>
+
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => handleEdit(service)}
+                      >
+                        Edit
+                      </Button>
+
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => handleAvailability(service)}
+                      >
+                        {service.isActive === false
+                          ? "Activate"
+                          : "Deactivate"}
+                      </Button>
+
+                      <Button
+                        size="sm"
+                        variant="destructive"
+                        onClick={() => handleDelete(service._id)}
+                      >
+                        Delete
+                      </Button>
+                    </div>
                   </TableCell>
                 </TableRow>
               ))}
@@ -298,8 +252,115 @@ const VendorServicesPage = () => {
           </Table>
         )}
       </div>
+
+      
+      <Dialog
+        open={!!viewService}
+        onOpenChange={(open) => {
+          if (!open) setViewService(null);
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Service Details</DialogTitle>
+          </DialogHeader>
+
+          {viewService && (
+            <div className="space-y-3">
+              {viewService.image && (
+                <Image
+  src={viewService.image}
+  alt={viewService.name}
+  width={500}
+  height={300}
+  className="h-48 w-full rounded object-cover"
+/>
+              )}
+
+              <p><strong>Name:</strong> {viewService.name}</p>
+              <p><strong>Category:</strong> {viewService.category}</p>
+              <p><strong>Location:</strong> {viewService.location}</p>
+              <p><strong>Price:</strong> {viewService.price}</p>
+              <p><strong>Description:</strong> {viewService.description}</p>
+              <p><strong>Status:</strong> {viewService.status}</p>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+     
+      <Dialog
+        open={!!editService}
+        onOpenChange={(open) => {
+          if (!open) setEditService(null);
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Update Service</DialogTitle>
+          </DialogHeader>
+
+          <form onSubmit={handleUpdate} className="space-y-4">
+            <div>
+              <Label>Service Name</Label>
+              <Input
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                required
+              />
+            </div>
+
+            <div>
+              <Label>Category</Label>
+              <select
+                value={category}
+                onChange={(e) => setCategory(e.target.value)}
+                className="w-full rounded-md border p-3"
+                required
+              >
+                <option value="">Select category</option>
+                {categories.map((item) => (
+                  <option key={item} value={item}>
+                    {item}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <Label>Description</Label>
+              <Textarea
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                required
+              />
+            </div>
+
+            <div>
+              <Label>Price</Label>
+              <Input
+                type="number"
+                value={price}
+                onChange={(e) => setPrice(e.target.value)}
+                required
+              />
+            </div>
+
+            <div>
+              <Label>Location</Label>
+              <Input
+                value={location}
+                onChange={(e) => setLocation(e.target.value)}
+                required
+              />
+            </div>
+
+            <Button type="submit" className="bg-[#245C45]">
+              Update Service
+            </Button>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
-};
-
-export default VendorServicesPage;
+}
