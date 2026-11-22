@@ -138,6 +138,43 @@ export default function Home() {
           </Link>
         </div>
       </section>
+          
+      <section className="max-w-7xl mx-auto px-4 py-16">
+        <div className="text-center">
+          <h2 className="text-3xl font-bold text-[#245C45]">
+            Wedding Service Categories
+          </h2>
+
+          <p className="mt-3 text-gray-600">
+            Explore services by category.
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mt-10">
+          {[
+            "Photography & Videography",
+            "Wedding Venues",
+            "Decoration & Florist",
+            "Catering Services",
+            "Makeup & Styling",
+            "Wedding Fashion",
+          ].map((category) => (
+            <Link
+              key={category}
+              href={`/services?category=${encodeURIComponent(category)}`}
+              className="border rounded-lg p-8 text-center shadow-sm hover:shadow-md hover:bg-[#f4f3ed] transition"
+            >
+              <h3 className="text-lg font-semibold text-[#245C45]">
+                {category}
+              </h3>
+
+              <p className="mt-2 text-gray-600">
+                Explore Services →
+              </p>
+            </Link>
+          ))}
+        </div>
+      </section>
     </main>
   );
 }

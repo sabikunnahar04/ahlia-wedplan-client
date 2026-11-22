@@ -2,6 +2,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { api } from "@/lib/api";
 
@@ -17,11 +18,15 @@ type Service = {
 };
 
 export default function BrowseServicesPage() {
+    const searchParams = useSearchParams();
+
     const [services, setServices] = useState<Service[]>([]);
     const [loading, setLoading] = useState(true);
 
     const [search, setSearch] = useState("");
-    const [category, setCategory] = useState("all");
+    const [category, setCategory] = useState(
+        searchParams.get("category") || "all"
+    );
     const [location, setLocation] = useState("all");
 
     useEffect(() => {

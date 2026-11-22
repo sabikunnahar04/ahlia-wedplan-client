@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useEffect, useState } from "react";
@@ -14,6 +15,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
@@ -41,6 +43,15 @@ type Service = {
   vendorId?: string;
 };
 
+const categories = [
+  "Photography & Videography",
+  "Wedding Venues",
+  "Decoration & Florist",
+  "Catering Services",
+  "Makeup & Styling",
+  "Wedding Fashion",
+];
+
 const VendorServicesPage = () => {
   const { data: session } = useSession();
 
@@ -49,6 +60,7 @@ const VendorServicesPage = () => {
   const [error, setError] = useState<string | null>(null);
 
   const [open, setOpen] = useState(false);
+
   const [name, setName] = useState("");
   const [category, setCategory] = useState("");
   const [location, setLocation] = useState("");
@@ -63,16 +75,20 @@ const VendorServicesPage = () => {
       setError(null);
 
       try {
-        const data = await api.get<{ data: Service[] }>("/api/services/my-services");
-
-        const list = data?.data ?? [];
+        const data = await api.get<{ data: Service[] }>(
+          "/api/services/my-services"
+        );
 
         if (active) {
-          setServices(list);
+          setServices(data?.data ?? []);
         }
       } catch (err) {
         if (active) {
-          setError(err instanceof Error ? err.message : "Failed to load services");
+          setError(
+            err instanceof Error
+              ? err.message
+              : "Failed to load services"
+          );
         }
       } finally {
         if (active) {
@@ -89,7 +105,9 @@ const VendorServicesPage = () => {
   }, []);
 
   const userId = session?.user?.id;
+
   const hasVendorIds = services.some((service) => service.vendorId);
+
   const visibleServices =
     userId && hasVendorIds
       ? services.filter((service) => service.vendorId === userId)
@@ -107,19 +125,25 @@ const VendorServicesPage = () => {
         description,
       });
 
-      const data = await api.get<{ data: Service[] }>("/api/services/my-services");
+      const data = await api.get<{ data: Service[] }>(
+        "/api/services/my-services"
+      );
 
-      const list = data?.data ?? [];
-
-      setServices(list);
+      setServices(data?.data ?? []);
       setOpen(false);
+
       setName("");
       setCategory("");
       setLocation("");
       setPrice("");
       setDescription("");
+      setError(null);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to add service");
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Failed to add service"
+      );
     }
   };
 
@@ -127,15 +151,24 @@ const VendorServicesPage = () => {
     <div className="p-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-[#245C45]">My Services</h1>
-          <p className="mt-2 text-gray-600">Manage your wedding services.</p>
+          <h1 className="text-2xl font-bold text-[#245C45]">
+            My Services
+          </h1>
+
+          <p className="mt-2 text-gray-600">
+            Manage your wedding services.
+          </p>
         </div>
 
         <Dialog open={open} onOpenChange={setOpen}>
-          <DialogTrigger render={<Button />}>Add Service</DialogTrigger>
+          <DialogTrigger render={<Button />}>
+            Add Service
+          </DialogTrigger>
+
           <DialogContent>
             <DialogHeader>
               <DialogTitle>Add Service</DialogTitle>
+
               <DialogDescription>
                 Enter the details of your new wedding service.
               </DialogDescription>
@@ -144,6 +177,7 @@ const VendorServicesPage = () => {
             <form onSubmit={handleAddService} className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="name">Service Name</Label>
+
                 <Input
                   id="name"
                   value={name}
@@ -153,38 +187,57 @@ const VendorServicesPage = () => {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="category">Category</Label>
-                <Input
+                <Label htmlFor="category">Service Category</Label>
+
+                <select
                   id="category"
                   value={category}
                   onChange={(e) => setCategory(e.target.value)}
-                />
+                  className="w-full border rounded-md p-3"
+                  required
+                >
+                  <option value="">Select a category</option>
+
+                  {categories.map((item) => (
+                    <option key={item} value={item}>
+                      {item}
+                    </option>
+                  ))}
+                </select>
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="location">Location</Label>
-                <Input
-                  id="location"
-                  value={location}
-                  onChange={(e) => setLocation(e.target.value)}
+                <Label htmlFor="description">Description</Label>
+
+                <Textarea
+                  id="description"
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  required
                 />
               </div>
 
               <div className="space-y-2">
                 <Label htmlFor="price">Price</Label>
+
                 <Input
                   id="price"
+                  type="number"
+                  min="0"
                   value={price}
                   onChange={(e) => setPrice(e.target.value)}
+                  required
                 />
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="description">Description</Label>
-                <Textarea
-                  id="description"
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
+                <Label htmlFor="location">Location</Label>
+
+                <Input
+                  id="location"
+                  value={location}
+                  onChange={(e) => setLocation(e.target.value)}
+                  required
                 />
               </div>
 
@@ -206,7 +259,9 @@ const VendorServicesPage = () => {
         ) : error ? (
           <p className="text-sm text-red-600">{error}</p>
         ) : visibleServices.length === 0 ? (
-          <p className="text-sm text-gray-500">No services found.</p>
+          <p className="text-sm text-gray-500">
+            No services found.
+          </p>
         ) : (
           <Table>
             <TableHeader>
@@ -218,9 +273,12 @@ const VendorServicesPage = () => {
                 <TableHead>Status</TableHead>
               </TableRow>
             </TableHeader>
+
             <TableBody>
               {visibleServices.map((service) => (
-                <TableRow key={service._id ?? service.id ?? service.name}>
+                <TableRow
+                  key={service._id ?? service.id ?? service.name}
+                >
                   <TableCell>{service.name}</TableCell>
                   <TableCell>{service.category ?? "-"}</TableCell>
                   <TableCell>{service.location ?? "-"}</TableCell>
@@ -230,7 +288,9 @@ const VendorServicesPage = () => {
                       : service.price ?? "-"}
                   </TableCell>
                   <TableCell>
-                    <Badge variant="secondary">{service.status ?? "unknown"}</Badge>
+                    <Badge variant="secondary">
+                      {service.status ?? "unknown"}
+                    </Badge>
                   </TableCell>
                 </TableRow>
               ))}
