@@ -2,7 +2,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
+import { useSession } from "@/lib/auth-client";
 import { api } from "@/lib/api";
 
 type Service = {
@@ -26,6 +27,9 @@ type Booking = {
 
 const ServiceDetailsPage = () => {
   const { id } = useParams<{ id: string }>();
+  const router = useRouter();
+
+  const { data: session, isPending } = useSession();
 
   const [service, setService] = useState<Service | null>(null);
   const [bookings, setBookings] = useState<Booking[]>([]);
@@ -39,6 +43,13 @@ const ServiceDetailsPage = () => {
   const [success, setSuccess] = useState("");
 
   useEffect(() => {
+    if (isPending) return;
+
+    if (!session) {
+      router.push("/signin");
+      return;
+    }
+
     const getData = async () => {
       try {
         const result = await api.get<{ data: Service[] }>("/api/services");
@@ -59,7 +70,7 @@ const ServiceDetailsPage = () => {
     };
 
     getData();
-  }, [id]);
+  }, [id, session, isPending, router]);
 
   const alreadyRequested = bookings.some(
     (booking) =>
@@ -104,8 +115,12 @@ const ServiceDetailsPage = () => {
     }
   };
 
-  if (loading) {
+  if (isPending || loading) {
     return <p className="p-6">Loading service...</p>;
+  }
+
+  if (!session) {
+    return null;
   }
 
   if (!service) {
@@ -121,9 +136,17 @@ const ServiceDetailsPage = () => {
           </h1>
 
           <div className="mt-6 space-y-4 text-gray-600">
-            <p><b>Category:</b> {service.category}</p>
-            <p><b>Location:</b> {service.location}</p>
-            <p><b>Price:</b> ৳{service.price}</p>
+            <p>
+              <b>Category:</b> {service.category}
+            </p>
+
+            <p>
+              <b>Location:</b> {service.location}
+            </p>
+
+            <p>
+              <b>Price:</b> ৳{service.price}
+            </p>
 
             <div>
               <b>Description:</b>
@@ -134,8 +157,14 @@ const ServiceDetailsPage = () => {
               <h2 className="font-bold text-[#245C45]">
                 Vendor Information
               </h2>
-              <p><b>Name:</b> {service.vendor?.name}</p>
-              <p><b>Email:</b> {service.vendor?.email}</p>
+
+              <p>
+                <b>Name:</b> {service.vendor?.name}
+              </p>
+
+              <p>
+                <b>Email:</b> {service.vendor?.email}
+              </p>
             </div>
           </div>
 
@@ -164,7 +193,10 @@ const ServiceDetailsPage = () => {
               </h2>
 
               <div>
-                <label className="mb-2 block font-medium">Event Date</label>
+                <label className="mb-2 block font-medium">
+                  Event Date
+                </label>
+
                 <input
                   type="date"
                   required
@@ -181,7 +213,10 @@ const ServiceDetailsPage = () => {
               )}
 
               <div>
-                <label className="mb-2 block font-medium">Event Location</label>
+                <label className="mb-2 block font-medium">
+                  Event Location
+                </label>
+
                 <input
                   type="text"
                   required
@@ -196,6 +231,7 @@ const ServiceDetailsPage = () => {
                 <label className="mb-2 block font-medium">
                   Additional Message
                 </label>
+
                 <textarea
                   rows={4}
                   placeholder="Write your message (optional)"
@@ -205,7 +241,9 @@ const ServiceDetailsPage = () => {
                 />
               </div>
 
-              {error && <p className="text-sm text-red-500">{error}</p>}
+              {error && (
+                <p className="text-sm text-red-500">{error}</p>
+              )}
 
               <button
                 type="submit"
@@ -220,6 +258,7 @@ const ServiceDetailsPage = () => {
               <h2 className="text-xl font-bold text-[#245C45]">
                 Ready to Book?
               </h2>
+
               <p className="mt-3 text-gray-500">
                 Click Book Now to send a booking request for this service.
               </p>
@@ -229,7 +268,9 @@ const ServiceDetailsPage = () => {
       </div>
 
       {success && (
-        <p className="mt-5 text-center text-green-600">{success}</p>
+        <p className="mt-5 text-center text-green-600">
+          {success}
+        </p>
       )}
     </div>
   );
