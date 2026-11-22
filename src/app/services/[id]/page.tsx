@@ -56,16 +56,20 @@ const ServiceDetailsPage = () => {
         const foundService = result.data.find((item) => item._id === id);
 
         setService(foundService ?? null);
+      } catch {
+        setService(null);
+      } finally {
+        setLoading(false);
+      }
 
+      try {
         const bookingResult = await api.get<{ data: Booking[] }>(
           "/api/bookings/my-bookings"
         );
 
         setBookings(bookingResult.data || []);
-      } catch {
-        setService(null);
-      } finally {
-        setLoading(false);
+      } catch (error) {
+        console.error("Booking fetch failed:", error);
       }
     };
 
@@ -136,17 +140,9 @@ const ServiceDetailsPage = () => {
           </h1>
 
           <div className="mt-6 space-y-4 text-gray-600">
-            <p>
-              <b>Category:</b> {service.category}
-            </p>
-
-            <p>
-              <b>Location:</b> {service.location}
-            </p>
-
-            <p>
-              <b>Price:</b> ৳{service.price}
-            </p>
+            <p><b>Category:</b> {service.category}</p>
+            <p><b>Location:</b> {service.location}</p>
+            <p><b>Price:</b> ৳{service.price}</p>
 
             <div>
               <b>Description:</b>
@@ -157,14 +153,8 @@ const ServiceDetailsPage = () => {
               <h2 className="font-bold text-[#245C45]">
                 Vendor Information
               </h2>
-
-              <p>
-                <b>Name:</b> {service.vendor?.name}
-              </p>
-
-              <p>
-                <b>Email:</b> {service.vendor?.email}
-              </p>
+              <p><b>Name:</b> {service.vendor?.name}</p>
+              <p><b>Email:</b> {service.vendor?.email}</p>
             </div>
           </div>
 
@@ -193,10 +183,7 @@ const ServiceDetailsPage = () => {
               </h2>
 
               <div>
-                <label className="mb-2 block font-medium">
-                  Event Date
-                </label>
-
+                <label className="mb-2 block font-medium">Event Date</label>
                 <input
                   type="date"
                   required
@@ -206,17 +193,10 @@ const ServiceDetailsPage = () => {
                 />
               </div>
 
-              {alreadyRequested && (
-                <p className="text-sm text-red-500">
-                  You already requested this service for this date.
-                </p>
-              )}
-
               <div>
                 <label className="mb-2 block font-medium">
                   Event Location
                 </label>
-
                 <input
                   type="text"
                   required
@@ -231,7 +211,6 @@ const ServiceDetailsPage = () => {
                 <label className="mb-2 block font-medium">
                   Additional Message
                 </label>
-
                 <textarea
                   rows={4}
                   placeholder="Write your message (optional)"
@@ -241,13 +220,11 @@ const ServiceDetailsPage = () => {
                 />
               </div>
 
-              {error && (
-                <p className="text-sm text-red-500">{error}</p>
-              )}
+              {error && <p className="text-sm text-red-500">{error}</p>}
 
               <button
                 type="submit"
-                disabled={submitting || alreadyRequested}
+                disabled={submitting}
                 className="w-full rounded-md bg-[#245C45] px-5 py-3 font-medium text-white disabled:opacity-50"
               >
                 {submitting ? "Submitting..." : "Submit Booking"}
@@ -258,7 +235,6 @@ const ServiceDetailsPage = () => {
               <h2 className="text-xl font-bold text-[#245C45]">
                 Ready to Book?
               </h2>
-
               <p className="mt-3 text-gray-500">
                 Click Book Now to send a booking request for this service.
               </p>
@@ -268,9 +244,7 @@ const ServiceDetailsPage = () => {
       </div>
 
       {success && (
-        <p className="mt-5 text-center text-green-600">
-          {success}
-        </p>
+        <p className="mt-5 text-center text-green-600">{success}</p>
       )}
     </div>
   );
