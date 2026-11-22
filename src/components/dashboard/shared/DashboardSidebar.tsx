@@ -10,6 +10,7 @@ import {
   Users,
   ClipboardCheck,
   CreditCard,
+  UserRound,
 } from "lucide-react";
 
 import {
@@ -33,6 +34,7 @@ const DashboardSidebar = ({ role }: DashboardSidebarProps) => {
   const customerLinks = [
     { title: "Overview", href: "/dashboard/customer", icon: LayoutDashboard },
     { title: "My Bookings", href: "/dashboard/customer/bookings", icon: CalendarCheck },
+    { title: "Profile Settings", href: "/dashboard/customer/profile", icon: UserRound },
   ];
 
   const vendorLinks = [
@@ -41,6 +43,7 @@ const DashboardSidebar = ({ role }: DashboardSidebarProps) => {
     { title: "Add Service", href: "/dashboard/vendor/services/add", icon: PlusCircle },
     { title: "Booking Requests", href: "/dashboard/vendor/requests", icon: ClipboardList },
     { title: "Subscription", href: "/dashboard/vendor/subscription", icon: Crown },
+    { title: "Profile Settings", href: "/dashboard/vendor/profile", icon: UserRound },
   ];
 
   const adminLinks = [

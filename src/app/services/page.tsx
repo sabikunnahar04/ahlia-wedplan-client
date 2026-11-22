@@ -14,7 +14,7 @@ type Service = {
     price: string;
     description: string;
     status: string;
-    isActive: boolean;
+    isActive?: boolean;
 };
 
 export default function BrowseServicesPage() {
@@ -36,7 +36,9 @@ export default function BrowseServicesPage() {
 
                 setServices(
                     (result.data || []).filter(
-                        (service) => service.status === "approved"
+                        (service) =>
+                            service.status === "approved" &&
+                            service.isActive !== false
                     )
                 );
             } catch (error) {
@@ -49,9 +51,13 @@ export default function BrowseServicesPage() {
         fetchServices();
     }, []);
 
-    const categories = [...new Set(services.map((service) => service.category))];
+    const categories = [
+        ...new Set(services.map((service) => service.category))
+    ];
 
-    const locations = [...new Set(services.map((service) => service.location))];
+    const locations = [
+        ...new Set(services.map((service) => service.location))
+    ];
 
     const filteredServices = services.filter(
         (service) =>
@@ -76,7 +82,7 @@ export default function BrowseServicesPage() {
                     placeholder="Search by service name..."
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
-                    className="w-full border rounded-md p-3 mt-6"
+                    className="w-full border rounded-md p-3"
                 />
 
                 <select
@@ -111,7 +117,9 @@ export default function BrowseServicesPage() {
             {loading ? (
                 <p className="mt-8">Loading services...</p>
             ) : filteredServices.length === 0 ? (
-                <p className="mt-8 text-gray-500">No services found.</p>
+                <p className="mt-8 text-gray-500">
+                    No services found.
+                </p>
             ) : (
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-8">
                     {filteredServices.map((service) => (

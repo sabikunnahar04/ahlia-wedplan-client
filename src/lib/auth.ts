@@ -1,43 +1,48 @@
+
 import { betterAuth } from "better-auth";
 import { mongodbAdapter } from "better-auth/adapters/mongodb";
 import { MongoClient } from "mongodb";
 import { jwt } from "better-auth/plugins";
 
-
 const client = new MongoClient(process.env.DB_URI as string);
 const db = client.db("wedplan");
 
 export const auth = betterAuth({
-   database: mongodbAdapter(db, {
+  database: mongodbAdapter(db, {
     client,
   }),
+
   plugins: [
-  jwt({
-    jwt: {
-      definePayload: ({ user }) => ({
-        id: user.id,
-        email: user.email,
-        role: user.role,
-      }),
-    },
-  }),
-],
+    jwt({
+      jwt: {
+        definePayload: ({ user }) => ({
+          id: user.id,
+          email: user.email,
+          role: user.role,
+        }),
+      },
+    }),
+  ],
 
   user: {
-  additionalFields: {
-    role: {
-      type: ["customer", "vendor"],
-      required: false,
-      defaultValue: "customer",
-      input: true,
+    additionalFields: {
+      role: {
+        type: ["customer", "vendor"],
+        required: false,
+        defaultValue: "customer",
+        input: true,
+      },
+      businessName: {
+        type: "string",
+        required: false,
+        input: true,
+      },
     },
   },
-},
 
-  emailAndPassword: { 
-    enabled: true, 
-  }, 
-  socialProviders: { 
-   
-  }, 
+  emailAndPassword: {
+    enabled: true,
+  },
+
+  socialProviders: {},
 });

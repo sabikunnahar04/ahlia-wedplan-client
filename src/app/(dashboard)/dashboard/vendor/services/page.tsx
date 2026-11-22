@@ -26,6 +26,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+
 import Image from "next/image";
 
 type Service = {
@@ -62,6 +63,9 @@ export default function VendorServicesPage() {
   const [location, setLocation] = useState("");
   const [price, setPrice] = useState("");
   const [description, setDescription] = useState("");
+  const [image, setImage] = useState<File | null>(null);
+
+  const [updating, setUpdating] = useState(false);
 
   const loadServices = async () => {
     const data = await api.get<{ data: Service[] }>(
@@ -92,6 +96,8 @@ export default function VendorServicesPage() {
     setLocation(service.location);
     setPrice(String(service.price));
     setDescription(service.description);
+    setImage(null);
+    setError("");
   };
 
   const handleUpdate = async (e: React.FormEvent) => {
@@ -99,19 +105,54 @@ export default function VendorServicesPage() {
 
     if (!editService) return;
 
+    setUpdating(true);
+    setError("");
+
     try {
+      let imageUrl = editService.image;
+
+      // Upload new image only if selected
+      if (image) {
+        const formData = new FormData();
+        formData.append("image", image);
+
+        const uploadResult = await fetch(
+          `https://api.imgbb.com/1/upload?key=${process.env.NEXT_PUBLIC_IMGBB_API_KEY}`,
+          {
+            method: "POST",
+            body: formData,
+          }
+        );
+
+        const uploadData = await uploadResult.json();
+
+        if (!uploadData.success) {
+          throw new Error("Image upload failed");
+        }
+
+        imageUrl = uploadData.data.url;
+      }
+
       await action.put(`/api/services/${editService._id}`, {
         name,
         category,
         location,
         price,
         description,
+        image: imageUrl,
       });
 
       await loadServices();
       setEditService(null);
-    } catch {
-      setError("Failed to update service");
+      setImage(null);
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Failed to update service"
+      );
+    } finally {
+      setUpdating(false);
     }
   };
 
@@ -181,13 +222,13 @@ export default function VendorServicesPage() {
                 <TableRow key={service._id}>
                   <TableCell>
                     {service.image ? (
-                     <Image
-  src={service.image}
-  alt={service.name}
-  width={48}
-  height={48}
-  className="h-12 w-12 rounded object-cover"
-/>
+                      <Image
+                        src={service.image}
+                        alt={service.name}
+                        width={48}
+                        height={48}
+                        className="h-12 w-12 rounded object-cover"
+                      />
                     ) : (
                       "-"
                     )}
@@ -253,7 +294,7 @@ export default function VendorServicesPage() {
         )}
       </div>
 
-      
+      {/* View Service Dialog */}
       <Dialog
         open={!!viewService}
         onOpenChange={(open) => {
@@ -269,12 +310,12 @@ export default function VendorServicesPage() {
             <div className="space-y-3">
               {viewService.image && (
                 <Image
-  src={viewService.image}
-  alt={viewService.name}
-  width={500}
-  height={300}
-  className="h-48 w-full rounded object-cover"
-/>
+                  src={viewService.image}
+                  alt={viewService.name}
+                  width={500}
+                  height={300}
+                  className="h-48 w-full rounded object-cover"
+                />
               )}
 
               <p><strong>Name:</strong> {viewService.name}</p>
@@ -288,11 +329,14 @@ export default function VendorServicesPage() {
         </DialogContent>
       </Dialog>
 
-     
+      {/* Edit Service Dialog */}
       <Dialog
         open={!!editService}
         onOpenChange={(open) => {
-          if (!open) setEditService(null);
+          if (!open) {
+            setEditService(null);
+            setImage(null);
+          }
         }}
       >
         <DialogContent>
@@ -355,8 +399,47 @@ export default function VendorServicesPage() {
               />
             </div>
 
-            <Button type="submit" className="bg-[#245C45]">
-              Update Service
+            <div className="space-y-2">
+              <Label>Current Service Image</Label>
+
+              {editService?.image ? (
+                <Image
+                  src={editService.image}
+                  alt={editService.name}
+                  width={200}
+                  height={120}
+                  className="h-28 w-48 rounded object-cover"
+                />
+              ) : (
+                <p className="text-sm text-gray-500">
+                  No image uploaded
+                </p>
+              )}
+
+              <Label htmlFor="edit-image">
+                Upload New Image (Optional)
+              </Label>
+
+              <Input
+                id="edit-image"
+                type="file"
+                accept="image/*"
+                onChange={(e) =>
+                  setImage(e.target.files?.[0] || null)
+                }
+              />
+            </div>
+
+            {error && (
+              <p className="text-sm text-red-600">{error}</p>
+            )}
+
+            <Button
+              type="submit"
+              disabled={updating}
+              className="bg-[#245C45]"
+            >
+              {updating ? "Updating..." : "Update Service"}
             </Button>
           </form>
         </DialogContent>
