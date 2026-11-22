@@ -35,6 +35,22 @@ const CustomerBookingsPage = () => {
     getBookings();
   }, []);
 
+  const cancelBooking = async (id: string) => {
+    try {
+      await api.put(`/api/bookings/${id}/cancel`, {});
+
+      setBookings((prev) =>
+        prev.map((booking) =>
+          booking._id === id
+            ? { ...booking, status: "cancelled" }
+            : booking
+        )
+      );
+    } catch {
+      setError("Could not cancel booking");
+    }
+  };
+
   return (
     <div className="p-6">
       <h1 className="text-2xl font-bold text-[#245C45]">
@@ -62,6 +78,7 @@ const CustomerBookingsPage = () => {
                 <th className="p-3">Event Date</th>
                 <th className="p-3">Location</th>
                 <th className="p-3">Status</th>
+                <th className="p-3">Action</th>
               </tr>
             </thead>
 
@@ -72,6 +89,17 @@ const CustomerBookingsPage = () => {
                   <td className="p-3">{booking.eventDate}</td>
                   <td className="p-3">{booking.eventLocation}</td>
                   <td className="p-3">{booking.status}</td>
+
+                  <td className="p-3">
+                    {booking.status === "pending" && (
+                      <button
+                        onClick={() => cancelBooking(booking._id)}
+                        className="bg-red-500 text-white px-3 py-1 rounded-md"
+                      >
+                        Cancel
+                      </button>
+                    )}
+                  </td>
                 </tr>
               ))}
             </tbody>
