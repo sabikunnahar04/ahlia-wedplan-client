@@ -8,6 +8,13 @@ const client = new MongoClient(process.env.DB_URI as string);
 const db = client.db("wedplan");
 
 export const auth = betterAuth({
+  baseURL:
+    "https://ahlia-wedplan-client-ehpo39kc0-sabikunnahar0506-3680.vercel.app",
+
+  trustedOrigins: [
+    "https://ahlia-wedplan-client-ehpo39kc0-sabikunnahar0506-3680.vercel.app",
+  ],
+
   database: mongodbAdapter(db, {
     client,
   }),
