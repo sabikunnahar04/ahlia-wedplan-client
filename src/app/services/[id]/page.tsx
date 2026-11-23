@@ -53,50 +53,58 @@ const ServiceDetailsPage = () => {
     const getData = async () => {
       try {
         const result = await api.get<{ data: Service[] }>("/api/services");
-        const foundService = result.data.find((item) => item._id === id);
+
+        const foundService = result.data.find(
+          (item) => item._id === id
+        );
 
         setService(foundService ?? null);
-      } catch {
-        setService(null);
-      } finally {
-        setLoading(false);
-      }
 
-      try {
         const bookingResult = await api.get<{ data: Booking[] }>(
           "/api/bookings/my-bookings"
         );
 
         setBookings(bookingResult.data || []);
-      } catch (error) {
-        console.error("Booking fetch failed:", error);
+      } catch (err) {
+        console.error("Data fetch failed:", err);
+        setError(
+          err instanceof Error ? err.message : "Could not load data"
+        );
+      } finally {
+        setLoading(false);
       }
     };
 
     getData();
   }, [id, session, isPending, router]);
 
-  const alreadyRequested = bookings.some(
-    (booking) =>
-      booking.serviceId === id &&
-      booking.eventDate === eventDate &&
-      ["pending", "accepted"].includes(booking.status)
-  );
+  const alreadyRequested =
+    eventDate !== "" &&
+    bookings.some(
+      (booking) =>
+        booking.serviceId === id &&
+        booking.eventDate === eventDate &&
+        ["pending", "accepted"].includes(booking.status)
+    );
 
-  const handleBooking = async (e: React.FormEvent<HTMLFormElement>) => {
+  const handleBooking = async (
+    e: React.FormEvent<HTMLFormElement>
+  ) => {
     e.preventDefault();
+
     setError("");
     setSuccess("");
     setSubmitting(true);
 
     try {
-      const res = await api.post("/api/bookings", {
+      const result = await api.post("/api/bookings", {
         serviceId: service?._id,
         eventDate,
         eventLocation,
         message,
       });
-      console.log(res);
+
+      console.log("Booking submitted:", result);
 
       setSuccess("Booking request submitted successfully!");
 
@@ -114,8 +122,13 @@ const ServiceDetailsPage = () => {
       setMessage("");
       setShowForm(false);
     } catch (err) {
-      console.log(err);
-      setError("You already have an active booking for this date.");
+      console.error("Booking submission failed:", err);
+
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Booking failed. Please try again."
+      );
     } finally {
       setSubmitting(false);
     }
@@ -185,7 +198,9 @@ const ServiceDetailsPage = () => {
               </h2>
 
               <div>
-                <label className="mb-2 block font-medium">Event Date</label>
+                <label className="mb-2 block font-medium">
+                  Event Date
+                </label>
                 <input
                   type="date"
                   required
@@ -222,7 +237,9 @@ const ServiceDetailsPage = () => {
                 />
               </div>
 
-              {error && <p className="text-sm text-red-500">{error}</p>}
+              {error && (
+                <p className="text-sm text-red-500">{error}</p>
+              )}
 
               <button
                 type="submit"
@@ -246,7 +263,9 @@ const ServiceDetailsPage = () => {
       </div>
 
       {success && (
-        <p className="mt-5 text-center text-green-600">{success}</p>
+        <p className="mt-5 text-center text-green-600">
+          {success}
+        </p>
       )}
     </div>
   );
