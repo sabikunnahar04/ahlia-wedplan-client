@@ -4,16 +4,19 @@ import { mongodbAdapter } from "better-auth/adapters/mongodb";
 import { MongoClient } from "mongodb";
 import { jwt } from "better-auth/plugins";
 
-const client = new MongoClient(process.env.DB_URI as string);
+const globalForMongo = globalThis as typeof globalThis & {
+  mongoClient?: MongoClient;
+};
+
+const client =
+  globalForMongo.mongoClient ??
+  new MongoClient(process.env.DB_URI as string);
+
+globalForMongo.mongoClient = client;
+
 const db = client.db("wedplan");
 
 export const auth = betterAuth({
-  baseURL: "https://ahlia-wedplan-client.vercel.app",
-
-  trustedOrigins: [
-    "https://ahlia-wedplan-client.vercel.app",
-  ],
-
   database: mongodbAdapter(db, {
     client,
   }),

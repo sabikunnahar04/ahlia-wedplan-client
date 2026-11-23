@@ -90,12 +90,13 @@ const ServiceDetailsPage = () => {
     setSubmitting(true);
 
     try {
-      await api.post("/api/bookings", {
+      const res = await api.post("/api/bookings", {
         serviceId: service?._id,
         eventDate,
         eventLocation,
         message,
       });
+      console.log(res);
 
       setSuccess("Booking request submitted successfully!");
 
@@ -112,7 +113,8 @@ const ServiceDetailsPage = () => {
       setEventLocation("");
       setMessage("");
       setShowForm(false);
-    } catch {
+    } catch (err) {
+      console.log(err);
       setError("You already have an active booking for this date.");
     } finally {
       setSubmitting(false);
