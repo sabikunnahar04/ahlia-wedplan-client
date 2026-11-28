@@ -1,5 +1,40 @@
 
+"use client";
+
+import { useState } from "react";
+import { toast } from "sonner";
+import api from "@/lib/api";
+
+type CheckoutResponse = {
+  success: boolean;
+  message: string;
+  data: {
+    redirectUrl: string;
+  };
+};
+
 const VendorSubscriptionPage = () => {
+  const [loading, setLoading] = useState(false);
+
+  const handleUpgrade = async () => {
+    try {
+      setLoading(true);
+
+      const result = await api.post<CheckoutResponse>(
+        "/api/subscription/create-checkout-session"
+      );
+
+      if (result.success && result.data.redirectUrl) {
+        window.location.href = result.data.redirectUrl;
+      }
+    } catch (error) {
+      console.error(error);
+      toast.error("Unable to start payment. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="p-6">
       <h1 className="text-2xl font-bold text-[#245C45]">
@@ -45,7 +80,10 @@ const VendorSubscriptionPage = () => {
           </h2>
 
           <p className="mt-3 text-3xl font-bold">
-            Premium
+            $19.99
+            <span className="text-sm font-normal text-gray-500">
+              {" "} / one-time
+            </span>
           </p>
 
           <ul className="mt-6 space-y-3 text-gray-600">
@@ -53,12 +91,15 @@ const VendorSubscriptionPage = () => {
             <li>✓ Premium Vendor Badge</li>
             <li>✓ Basic dashboard</li>
             <li>✓ Booking request management</li>
+            <li>✓ 1 year Premium access</li>
           </ul>
 
           <button
-            className="mt-8 w-full rounded-lg bg-[#245C45] py-3 font-medium text-white hover:bg-[#173F31]"
+            onClick={handleUpgrade}
+            disabled={loading}
+            className="mt-8 w-full rounded-lg bg-[#245C45] py-3 font-medium text-white hover:bg-[#173F31] disabled:cursor-not-allowed disabled:opacity-60"
           >
-            Upgrade to Premium
+            {loading ? "Please wait..." : "Upgrade to Premium"}
           </button>
         </div>
       </div>
